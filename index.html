@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>CIRRA — Голосовой помощник</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com "></script>
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons "></script>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(to bottom right, #0f172a, #1e293b);
+    }
+
+    .sidebar-button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 1rem;
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .sidebar-button:hover {
+      background-color: #4b5563; /* gray-700 */
+      color: white;
+    }
+
+    .button-text {
+      position: absolute;
+      left: 4rem;
+      opacity: 0;
+      transform: scale(0.95);
+      visibility: hidden;
+      white-space: nowrap;
+      overflow: hidden;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      background-color: #1f2937; /* gray-800 */
+      color: white;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .sidebar-button:hover .button-text {
+      left: 4.25rem;
+      opacity: 1;
+      transform: scale(1);
+      visibility: visible;
+    }
+
+    .top-bar-button:hover {
+      opacity: 0.85;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    .hero-glow {
+      animation: glow 2s infinite alternate ease-in-out;
+    }
+
+    @keyframes glow {
+      from {
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+      }
+      to {
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 1.5s ease-out forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+
+    .float {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col h-screen">
+
+  <!-- Top Bar -->
+  <div class="bg-gray-800 text-white h-10 flex items-center justify-between px-4">
+    <span class="font-bold">CIRRA</span>
+    <div class="flex space-x-2">
+      <!-- Minimize Button -->
+      <button onclick="minimizeApp()" class="text-gray-300 hover:text-white focus:outline-none top-bar-button">
+        <i data-feather="minus" class="w-4 h-4"></i>
+      </button>
+      <!-- Close Button -->
+      <button onclick="closeApp()" class="text-gray-300 hover:text-red-500 focus:outline-none top-bar-button">
+        <i data-feather="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="flex flex-grow overflow-hidden">
+
+    <!-- Sidebar with animated expand on hover -->
+    <div class="bg-gray-900 text-white w-16 flex flex-col items-center gap-2 p-3 relative">
+      <button onclick="loadScreen('home')" class="sidebar-button group">
+        <i data-feather="home" class="w-5 h-5"></i>
+        <span class="button-text">Главная</span>
+      </button>
+      <button onclick="loadScreen('settings')" class="sidebar-button group">
+        <i data-feather="settings" class="w-5 h-5"></i>
+        <span class="button-text">Настройки</span>
+      </button>
+      <button onclick="loadScreen('about')" class="sidebar-button group">
+        <i data-feather="info" class="w-5 h-5"></i>
+        <span class="button-text">О программе</span>
+      </button>
+    </div>
+
+    <!-- Content Area -->
+    <div id="screenContainer" class="flex-grow p-6 bg-gray-900 overflow-auto">
+      <!-- Приветственный экран будет загружен сюда -->
+    </div>
+
+  </div>
+
+  <!-- Feather Icons init -->
+  <script>
+    feather.replace();
+  </script>
+
+  <!-- Electron API -->
+  <script>
+    function loadScreen(screen) {
+      fetch(`screens/${screen}.html`)
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('screenContainer').innerHTML = html;
+        });
+    }
+
+    window.onload = () => loadScreen('home');
+  </script>
+
+  <!-- IPCRenderer через preload.js -->
+  <script>
+    function minimizeApp() {
+      window.electronAPI.minimize();
+    }
+
+    function closeApp() {
+      window.electronAPI.close();
+    }
+  </script>
+</body>
+</html>
