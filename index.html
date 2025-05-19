@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <title>CIRRA — Голосовой помощник</title>
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com "></script>
+
   <!-- Feather Icons -->
   <script src="https://unpkg.com/feather-icons "></script>
+
   <style>
     body {
       margin: 0;
@@ -91,19 +94,29 @@
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
     }
+
+    /* Перетаскивание окна */
+    #top-bar {
+      -webkit-user-select: none;
+      -webkit-app-region: drag;
+    }
+
+    #top-bar button,
+    #top-bar i {
+      -webkit-app-region: no-drag;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen">
 
   <!-- Top Bar -->
-  <div class="bg-gray-800 text-white h-10 flex items-center justify-between px-4">
+  <div id="top-bar" class="bg-gray-800 text-white h-10 flex items-center justify-between px-4 select-none">
     <span class="font-bold">CIRRA</span>
-    <div class="flex space-x-2">
-      <!-- Minimize Button -->
+      <div class="flex space-x-2">
       <button onclick="minimizeApp()" class="text-gray-300 hover:text-white focus:outline-none top-bar-button">
         <i data-feather="minus" class="w-4 h-4"></i>
-      </button>
-      <!-- Close Button -->
+        </button>
       <button onclick="closeApp()" class="text-gray-300 hover:text-red-500 focus:outline-none top-bar-button">
         <i data-feather="x" class="w-4 h-4"></i>
       </button>
@@ -141,7 +154,7 @@
     feather.replace();
   </script>
 
-  <!-- Electron API -->
+  <!-- Load Screen Logic -->
   <script>
     function loadScreen(screen) {
       fetch(`screens/${screen}.html`)
@@ -163,6 +176,22 @@
     function closeApp() {
       window.electronAPI.close();
     }
+
+    // Переключение между экранами
+  function loadScreen(screen) {
+    fetch(`screens/${screen}.html`)
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('screenContainer').innerHTML = html;
+      });
+  }
+
+  // Слушаем событие из main.js
+  window.addEventListener('DOMContentLoaded', () => {
+    window.electronAPI.onNavigate((event, screen) => {
+      loadScreen(screen);
+    });
+  });
   </script>
 </body>
 </html>

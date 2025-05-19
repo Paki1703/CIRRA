@@ -1,0 +1,144 @@
+<div class="flex flex-col h-full max-w-3xl mx-auto px-4 py-6">
+  <h2 class="text-3xl font-bold text-blue-500 mb-6">CIRRA: Голосовой помощник</h2>
+
+  <!-- Chat Container -->
+  <div id="chat-container" class="flex-grow overflow-y-auto mb-6 space-y-4 p-4 bg-gray-800 rounded-xl"></div>
+
+  <!-- Input Area -->
+  <div class="flex items-center gap-2">
+    <!-- Voice Button -->
+    <button id="voice-button" onclick="toggleVoice()" class="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition">
+        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>
+    </button>
+
+    <!-- Text Input -->
+    <input id="message-input" type="text" placeholder="Напишите или скажите что-то..." class="flex-grow p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+    <!-- Send Button -->
+    <button onclick="sendMessage()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition">
+      Отправить
+    </button>
+  </div>
+
+  <!-- Status Indicator -->
+  <div id="status-indicator" class="mt-2 text-sm text-gray-400 italic hidden">
+    CIRRA печатает...
+  </div>
+</div>
+
+<style>
+  #chat-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #chat-container::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 3px;
+  }
+
+  .message {
+    @apply p-3 rounded-lg max-w-[80%] mb-3 whitespace-pre-wrap;
+  }
+
+  .user-message {
+    @apply bg-blue-600 text-white self-end ml-auto rounded-br-none shadow-md;
+  }
+
+  .bot-message {
+    @apply bg-gray-700 text-gray-200 self-start mr-auto rounded-bl-none shadow-md;
+  }
+</style>
+
+<script>
+  const chatContainer = document.getElementById('chat-container');
+  const messageInput = document.getElementById('message-input');
+  const statusIndicator = document.getElementById('status-indicator');
+
+  function appendMessage(role, text) {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', role === 'user' ? 'user-message' : 'bot-message');
+    msgDiv.textContent = text;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex flex-col';
+    wrapper.innerHTML = `<div class="font-semibold text-xs text-gray-400">${role === 'user' ? 'Вы' : 'CIRRA'}</div>`;
+    wrapper.appendChild(msgDiv);
+
+    chatContainer.appendChild(wrapper);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+  function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    appendMessage('user', text);
+    messageInput.value = '';
+    statusIndicator.classList.remove('hidden');
+
+    window.electronAPI.sendChatMessage(text);
+
+    // Получаем ответ от main.js
+    ipcRenderer.once('chat-response', (event, response) => {
+      appendMessage('assistant', response);
+      statusIndicator.classList.add('hidden');
+    });
+  }
+
+  function handleKeyPress(e) {
+    if (e.key === 'Enter') sendMessage();
+  }
+
+  // --- Голосовой ввод ---
+  let recognition;
+  let isListening = false;
+
+  function toggleVoice() {
+    if (!window.webkitSpeechRecognition) {
+      alert('Голосовой ввод не поддерживается вашим окружением.');
+      return;
+    }
+
+    if (!isListening) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = 'ru-RU';
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        messageInput.value = transcript;
+        sendMessage();
+      };
+
+      recognition.onerror = () => {
+        isListening = false;
+        document.getElementById('voice-button').classList.remove('bg-red-600');
+      };
+
+      recognition.start();
+      isListening = true;
+      document.getElementById('voice-button').classList.add('bg-red-600');
+    } else {
+      recognition.stop();
+      isListening = false;
+      document.getElementById('voice-button').classList.remove('bg-red-600');
+    }
+  }
+
+  // --- IPCRenderer для связи с main.js ---
+  const { ipcRenderer } = require('electron').ipcRenderer;
+
+  window.electronAPI.onChatResponse((response) => {
+    appendMessage('assistant', response);
+    statusIndicator.classList.add('hidden');
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    messageInput.focus();
+    messageInput.addEventListener('keydown', handleKeyPress);
+  });
+</script>

@@ -17,6 +17,30 @@ function createWindow() {
   mainWindow.loadFile('index.html');
 }
 
+ipcMain.on('open-workspace', () => {
+  if (mainWindow) {
+    mainWindow.webContents.send('navigate', 'work');
+  }
+});
+
+ipcMain.on('chat-message', (event, message) => {
+  console.log("Получено сообщение:", message);
+
+  // Эмуляция ответа
+  setTimeout(() => {
+    const responses = [
+      "Интересная мысль!",
+      "Дайте мне подумать об этом...",
+      "Хорошо, я понимаю, о чём вы.",
+      "Могу помочь с этим вопросом."
+    ];
+    const response = responses[Math.floor(Math.random() * responses.length)];
+
+    event.reply('chat-response', response);
+  }, 1000);
+});
+
+
 app.whenReady().then(createWindow);
 
 ipcMain.on('minimize-window', () => {
